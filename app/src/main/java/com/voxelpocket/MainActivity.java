@@ -1,4 +1,4 @@
-package com.voxelpocket;
+package com.pixelcraft.go;
 
 import android.app.Activity;
 import android.content.Intent;
