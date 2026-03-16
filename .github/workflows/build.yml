@@ -23,7 +23,9 @@ jobs:
         run: sdkmanager "ndk;25.2.9519653"
 
       - name: Build Debug APK
-        run: gradle assembleDebug
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
