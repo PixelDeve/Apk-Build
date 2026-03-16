@@ -28,7 +28,9 @@ jobs:
           gradle-version: '8.7'
 
       - name: Build Debug APK
-        run: gradle assembleDebug
+        run: |
+          cat -A app/src/main/AndroidManifest.xml
+          gradle assembleDebug --stacktrace 2>&1 | grep -A5 "Error parsing"
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
