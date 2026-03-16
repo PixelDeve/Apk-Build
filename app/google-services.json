@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "709778027442",
+    "project_id": "pixelbox-bca1b",
+    "storage_bucket": "pixelbox-bca1b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:709778027442:android:a740ac1b25db136f24eaab",
+        "android_client_info": {
+          "package_name": "com.pixelcraft.go"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "709778027442-b59ak5n723936llu36o8t7uk9e34v6g2.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBmwyosZ40YISnvSBD53iO6hRS4QFnk0QY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "709778027442-b59ak5n723936llu36o8t7uk9e34v6g2.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
