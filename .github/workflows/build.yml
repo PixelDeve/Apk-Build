@@ -22,7 +22,7 @@ jobs:
       - name: Install NDK
         run: sdkmanager "ndk;25.2.9519653"
 
-      - - name: Build Debug APK
+      - name: Build Debug APK
         run: gradle assembleDebug --no-daemon -Dorg.gradle.java.home=$JAVA_HOME
 
       - name: Upload APK
