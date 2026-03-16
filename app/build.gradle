@@ -8,7 +8,7 @@ android {
     compileSdk 34
 
     defaultConfig {
-        applicationId "com.voxelpocket"
+        applicationId "com.pixelcraft.go"
         minSdk 24                         // Android 7.0 (OpenGL ES 3.0 guaranteed)
         targetSdk 34
         versionCode 1
