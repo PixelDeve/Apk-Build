@@ -32,35 +32,25 @@ jobs:
         run: |
           python3 << 'PYEOF'
           import re
-
-          # Fix World.h - Blocks.h is in game/ folder
           f = open('app/src/main/cpp/world/World.h', 'r'); c = f.read(); f.close()
           c = c.replace('#include "Blocks.h"', '#include "../game/Blocks.h"')
           open('app/src/main/cpp/world/World.h', 'w').write(c)
-
-          # Fix Renderer.h - Chunk.h and World.h are in world/ folder
           f = open('app/src/main/cpp/renderer/Renderer.h', 'r'); c = f.read(); f.close()
           c = c.replace('#include "Chunk.h"', '#include "../world/Chunk.h"')
           c = c.replace('#include "World.h"', '#include "../world/World.h"')
           open('app/src/main/cpp/renderer/Renderer.h', 'w').write(c)
-
-          # Fix FirebaseClient.h - add unordered_map and fix FS_BASE macro
           f = open('app/src/main/cpp/network/FirebaseClient.h', 'r'); c = f.read(); f.close()
           if '#include <unordered_map>' not in c:
               c = '#include <unordered_map>\n' + c
-          # Fix FS_BASE - replace with hardcoded string instead of mixing literals with variables
-          c = re.sub(
-              r'#define FS_BASE.*',
-              '#define FS_BASE "https://firestore.googleapis.com/v1/projects/pixelbox-bca1b/databases/(default)/documents/artifacts/pixelbox_v1/public/data"',
-              c
-          )
+          c = re.sub(r'#define FS_BASE.*', '#define FS_BASE "https://firestore.googleapis.com/v1/projects/pixelbox-bca1b/databases/(default)/documents/artifacts/pixelbox_v1/public/data"', c)
           open('app/src/main/cpp/network/FirebaseClient.h', 'w').write(c)
-
-          print("All C++ headers fixed!")
           PYEOF
 
       - name: Fix AndroidManifest
         run: python3 -c "open('app/src/main/AndroidManifest.xml','w').write('<?xml version=\"1.0\" encoding=\"utf-8\"?><manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"><uses-permission android:name=\"android.permission.INTERNET\"/><uses-feature android:glEsVersion=\"0x00030000\" android:required=\"true\"/><application android:allowBackup=\"false\" android:label=\"Voxel Pocket\" android:theme=\"@android:style/Theme.NoTitleBar.Fullscreen\" android:hardwareAccelerated=\"true\"><activity android:name=\".MainActivity\" android:exported=\"true\" android:configChanges=\"orientation|screenSize|keyboardHidden\" android:screenOrientation=\"landscape\" android:launchMode=\"singleTop\"><intent-filter><action android:name=\"android.intent.action.MAIN\"/><category android:name=\"android.intent.category.LAUNCHER\"/></intent-filter></activity></application></manifest>')"
+
+      - name: Remove old MainActivity
+        run: rm -f app/src/main/java/com/voxelpocket/MainActivity.java
 
       - name: Fix MainActivity
         run: |
