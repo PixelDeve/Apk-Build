@@ -1,27 +1,35 @@
 name: Build APK
+
 on:
   push:
     branches: [ main ]
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+
       - name: Set up JDK
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
+
       - name: Setup Android SDK
-        uses: android-actions/setup-android@v2
+        uses: android-actions/setup-android@v3
+
       - name: Install NDK
         run: sdkmanager "ndk;25.2.9519653"
+
       - name: Make gradlew executable
         run: chmod +x gradlew
+
       - name: Build Debug APK
         run: ./gradlew assembleDebug
+
       - name: Upload APK
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: VoxelGame-debug
           path: app/build/outputs/apk/debug/*.apk
