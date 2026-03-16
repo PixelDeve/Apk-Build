@@ -22,6 +22,33 @@ jobs:
       - name: Install NDK
         run: sdkmanager "ndk;25.2.9519653"
 
+      - name: Fix AndroidManifest
+        run: |
+          cat > app/src/main/AndroidManifest.xml << 'MANIFEST'
+          <?xml version="1.0" encoding="utf-8"?>
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+              <uses-permission android:name="android.permission.INTERNET" />
+              <uses-feature android:glEsVersion="0x00030000" android:required="true" />
+              <application
+                  android:allowBackup="false"
+                  android:label="Voxel Pocket"
+                  android:theme="@android:style/Theme.NoTitleBar.Fullscreen"
+                  android:hardwareAccelerated="true">
+                  <activity
+                      android:name=".MainActivity"
+                      android:exported="true"
+                      android:configChanges="orientation|screenSize|keyboardHidden"
+                      android:screenOrientation="landscape"
+                      android:launchMode="singleTop">
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN" />
+                          <category android:name="android.intent.category.LAUNCHER" />
+                      </intent-filter>
+                  </activity>
+              </application>
+          </manifest>
+          MANIFEST
+
       - name: Install Gradle 8.7
         uses: gradle/actions/setup-gradle@v3
         with:
@@ -34,4 +61,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: VoxelGame-debug
-          path: app/build/outputs/apk/debug/*.apk
+          path: app/build/outputs/apk/debug/*.apk          path: app/build/outputs/apk/debug/*.apk
