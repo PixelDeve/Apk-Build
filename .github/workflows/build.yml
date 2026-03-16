@@ -25,6 +25,88 @@ jobs:
       - name: Fix AndroidManifest
         run: python3 -c "open('app/src/main/AndroidManifest.xml','w').write('<?xml version=\"1.0\" encoding=\"utf-8\"?><manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"><uses-permission android:name=\"android.permission.INTERNET\"/><uses-feature android:glEsVersion=\"0x00030000\" android:required=\"true\"/><application android:allowBackup=\"false\" android:label=\"Voxel Pocket\" android:theme=\"@android:style/Theme.NoTitleBar.Fullscreen\" android:hardwareAccelerated=\"true\"><activity android:name=\".MainActivity\" android:exported=\"true\" android:configChanges=\"orientation|screenSize|keyboardHidden\" android:screenOrientation=\"landscape\" android:launchMode=\"singleTop\"><intent-filter><action android:name=\"android.intent.action.MAIN\"/><category android:name=\"android.intent.category.LAUNCHER\"/></intent-filter></activity></application></manifest>')"
 
+      - name: Fix MainActivity
+        run: |
+          mkdir -p app/src/main/java/com/pixelcraft/go
+          cat > app/src/main/java/com/pixelcraft/go/MainActivity.java << 'JAVAEOF'
+          package com.pixelcraft.go;
+          import android.app.Activity;
+          import android.content.Intent;
+          import android.os.Bundle;
+          import android.view.Surface;
+          import android.view.SurfaceHolder;
+          import android.view.SurfaceView;
+          import android.view.View;
+          import android.view.WindowManager;
+          import com.google.android.gms.auth.api.signin.*;
+          import com.google.android.gms.common.api.ApiException;
+          import com.google.firebase.auth.*;
+          import com.google.android.gms.tasks.Task;
+          public class MainActivity extends Activity implements SurfaceHolder.Callback {
+              public native void nativeInit(Surface surface, int w, int h);
+              public native void nativeResize(int w, int h);
+              public native void nativeFrame();
+              public native void nativeDestroy();
+              public native void onAuthResult(String uid, String email, String name, String photo, String token, boolean ok, String err);
+              private static final int RC_SIGN_IN = 9001;
+              private GoogleSignInClient mGoogleSignInClient;
+              private FirebaseAuth mFirebaseAuth;
+              private GLThread glThread;
+              private SurfaceView surfaceView;
+              static { System.loadLibrary("voxelpocket"); }
+              @Override
+              protected void onCreate(Bundle savedInstanceState) {
+                  super.onCreate(savedInstanceState);
+                  getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+                  getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_FULLSCREEN|View.SYSTEM_UI_FLAG_HIDE_NAVIGATION|View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
+                  surfaceView = new SurfaceView(this);
+                  surfaceView.getHolder().addCallback(this);
+                  setContentView(surfaceView);
+                  mFirebaseAuth = FirebaseAuth.getInstance();
+                  String webClientId = getResources().getString(getResources().getIdentifier("default_web_client_id","string",getPackageName()));
+                  GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN).requestIdToken(webClientId).requestEmail().build();
+                  mGoogleSignInClient = GoogleSignIn.getClient(this, gso);
+                  FirebaseUser user = mFirebaseAuth.getCurrentUser();
+                  if (user != null) { user.getIdToken(true).addOnSuccessListener(res -> { notifyAuthSuccess(user, res.getToken()); }); }
+              }
+              public void startGoogleSignIn() { startActivityForResult(mGoogleSignInClient.getSignInIntent(), RC_SIGN_IN); }
+              public void signOut() { mFirebaseAuth.signOut(); mGoogleSignInClient.signOut(); }
+              @Override
+              protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+                  super.onActivityResult(requestCode, resultCode, data);
+                  if (requestCode == RC_SIGN_IN) {
+                      Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
+                      try { firebaseAuthWithGoogle(task.getResult(ApiException.class).getIdToken()); }
+                      catch (ApiException e) { onAuthResult("","","","","",false,e.getMessage()); }
+                  }
+              }
+              private void firebaseAuthWithGoogle(String idToken) {
+                  mFirebaseAuth.signInWithCredential(GoogleAuthProvider.getCredential(idToken,null)).addOnCompleteListener(this, task -> {
+                      if (task.isSuccessful()) { FirebaseUser u = mFirebaseAuth.getCurrentUser(); u.getIdToken(true).addOnSuccessListener(res -> { notifyAuthSuccess(u, res.getToken()); }); }
+                      else { onAuthResult("","","","","",false, task.getException()!=null?task.getException().getMessage():"Auth failed"); }
+                  });
+              }
+              private void notifyAuthSuccess(FirebaseUser user, String token) {
+                  onAuthResult(user.getUid(), user.getEmail()!=null?user.getEmail():"", user.getDisplayName()!=null?user.getDisplayName():"", user.getPhotoUrl()!=null?user.getPhotoUrl().toString():"", token!=null?token:"", true, "");
+              }
+              @Override public void surfaceCreated(SurfaceHolder holder) {}
+              @Override public void surfaceChanged(SurfaceHolder holder, int format, int w, int h) {
+                  if (glThread==null) { glThread=new GLThread(holder.getSurface(),w,h); glThread.start(); } else { nativeResize(w,h); }
+              }
+              @Override public void surfaceDestroyed(SurfaceHolder holder) { if (glThread!=null) { glThread.requestStop(); glThread=null; } }
+              @Override protected void onResume() { super.onResume(); if (glThread!=null) glThread.resumeGL(); }
+              @Override protected void onPause() { super.onPause(); if (glThread!=null) glThread.pauseGL(); }
+              @Override protected void onDestroy() { super.onDestroy(); if (glThread!=null) { glThread.requestStop(); glThread=null; } }
+              private class GLThread extends Thread {
+                  private final Surface surface; private final int w,h;
+                  private volatile boolean running=true,paused=false;
+                  GLThread(Surface s,int w,int h){this.surface=s;this.w=w;this.h=h;}
+                  @Override public void run() { nativeInit(surface,w,h); while(running){if(!paused)nativeFrame();try{Thread.sleep(1);}catch(InterruptedException ignored){}} nativeDestroy(); }
+                  void requestStop(){running=false;} void pauseGL(){paused=true;} void resumeGL(){paused=false;}
+              }
+          }
+          JAVAEOF
+
       - name: Install Gradle 8.7
         uses: gradle/actions/setup-gradle@v3
         with:
